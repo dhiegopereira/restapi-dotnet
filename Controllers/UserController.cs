@@ -22,9 +22,9 @@ namespace TodoList.Controllers
         [HttpGet]
         [Authorize]
         public IActionResult Index() {
-            var tasks = _context.Users.ToList();
+            var users = _context.Users.ToList();
 
-            return Ok(tasks);
+            return Ok(users);
         }
 
         [HttpPost]
@@ -102,14 +102,15 @@ namespace TodoList.Controllers
             var SecretKey = configuration.GetSection("JWT")["SecretKey"];
 
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(SecretKey);
+            var key = Encoding.UTF8.GetBytes(SecretKey);
+            
             var tokenDescriptor = new SecurityTokenDescriptor {
-                Subject = new ClaimsIdentity(new Claim[]
-                {
-                new Claim(ClaimTypes.Name, existingUser.Id.ToString())
+                Subject = new ClaimsIdentity(new Claim[] {
+                    new Claim(ClaimTypes.Name, existingUser.Id.ToString())
                 }),
                 Expires = DateTime.UtcNow.AddMinutes(30),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+
             };
             var token = tokenHandler.CreateToken(tokenDescriptor);
 

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TodoList.Data;
 using TodoList.Models;
@@ -7,6 +8,7 @@ namespace TodoList.Controllers
 {
     [ApiController]
     [Route("[controller]")]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     public class TaskController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -15,8 +17,7 @@ namespace TodoList.Controllers
             _context = context;
         }
 
-        [HttpGet]
-        [Authorize]
+        [HttpGet]        
         public IActionResult Index() {
             var tasks = _context.Items.ToList();
 
