@@ -93,19 +93,26 @@ namespace TodoList.Controllers
             var existingUser = _context.Users.FirstOrDefault(u => u.Email == user.Email && u.Password == user.Password);
 
             if (existingUser == null) {
-                return BadRequest(new { message = "Usuário ou senha inválidos" });
+                return BadRequest(new { message = "User or password invalid" });
             }
 
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.UTF8.GetBytes(configuration.GetSection("JWT")["SecretKey"]);
+            
+            var SecretKey = configuration.GetSection("JWT")["SecretKey"];
             var audience = configuration.GetSection("JWT")["Audience"];
             var issuer = configuration.GetSection("JWT")["Issuer"];
 
+            if (SecretKey == null) {
+                return BadRequest(new { message = "Secret Key is not existing" });
+            }
+
+            var key = Encoding.UTF8.GetBytes(SecretKey);
+
             var tokenDescriptor = new SecurityTokenDescriptor {
                 Subject = new ClaimsIdentity(new Claim[] {
-            new Claim(ClaimTypes.Email, existingUser.Id.ToString())
-        }),
-                Expires = DateTime.UtcNow.AddMinutes(1),
+                    new Claim(ClaimTypes.Email, existingUser.Id.ToString())
+                }),
+                Expires = DateTime.UtcNow.AddHours(1),
                 Audience = audience,
                 Issuer = issuer,
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
