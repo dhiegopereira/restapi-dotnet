@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -11,6 +12,7 @@ namespace TodoList.Controllers
 {
     [ApiController]
     [Route("[controller]")]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     public class UserController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -20,7 +22,6 @@ namespace TodoList.Controllers
         }
 
         [HttpGet]
-        [Authorize]
         public IActionResult Index() {
             var users = _context.Users.ToList();
 
@@ -28,7 +29,6 @@ namespace TodoList.Controllers
         }
 
         [HttpPost]
-        [Authorize]
         public IActionResult Create([FromBody] User user) {
             if (user == null) {
                 return BadRequest();
@@ -42,7 +42,6 @@ namespace TodoList.Controllers
         }
 
         [HttpGet("{id}", Name = "GetUser")]
-        [Authorize]
         public IActionResult Read(int id) {
             var user = _context.Users.Find(id);
 
@@ -54,7 +53,6 @@ namespace TodoList.Controllers
         }
 
         [HttpPut("{id}")]
-        [Authorize]
         public IActionResult Update(int id, [FromBody] User user) {
             if (user == null || user.Id != id) {
                 return BadRequest();
@@ -75,8 +73,7 @@ namespace TodoList.Controllers
             return new NoContentResult();
         }
 
-        [HttpDelete("{id}")]
-        [Authorize]
+        [HttpDelete("{id}")]        
         public IActionResult Delete(int id) {
             var user = _context.Users.Find(id);
 
@@ -99,23 +96,26 @@ namespace TodoList.Controllers
                 return BadRequest(new { message = "Usuário ou senha inválidos" });
             }
 
-            var SecretKey = configuration.GetSection("JWT")["SecretKey"];
-
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.UTF8.GetBytes(SecretKey);
-            
+            var key = Encoding.UTF8.GetBytes(configuration.GetSection("JWT")["SecretKey"]);
+            var audience = configuration.GetSection("JWT")["Audience"];
+            var issuer = configuration.GetSection("JWT")["Issuer"];
+
             var tokenDescriptor = new SecurityTokenDescriptor {
                 Subject = new ClaimsIdentity(new Claim[] {
-                    new Claim(ClaimTypes.Name, existingUser.Id.ToString())
-                }),
-                Expires = DateTime.UtcNow.AddMinutes(30),
+            new Claim(ClaimTypes.Email, existingUser.Id.ToString())
+        }),
+                Expires = DateTime.UtcNow.AddMinutes(1),
+                Audience = audience,
+                Issuer = issuer,
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
-
             };
+
             var token = tokenHandler.CreateToken(tokenDescriptor);
 
             return Ok(new { token = tokenHandler.WriteToken(token) });
         }
+
     }
 
 }

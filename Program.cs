@@ -5,15 +5,16 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.OpenApi.Models;
 
-
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddControllers();
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 var SecretKey = builder.Configuration.GetSection("JWT")["SecretKey"];
-var ValidIssuer = builder.Configuration.GetSection("JWT")["ValidIssuer"];
-var ValidAudience = builder.Configuration.GetSection("JWT")["ValidAudience"];
+var Issuer = builder.Configuration.GetSection("JWT")["Issuer"];
+var Audience = builder.Configuration.GetSection("JWT")["Audience"];
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options => {
@@ -22,8 +23,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = ValidIssuer,
-            ValidAudience = ValidAudience,
+            ValidIssuer = Issuer,
+            ValidAudience = Audience,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(SecretKey))
         };
     });
@@ -63,12 +64,10 @@ builder.Services.AddSwaggerGen(options => {
 
 builder.Services.AddAuthorization();
 
-builder.Services.AddControllers();
-
 var app = builder.Build();
 
-app.UseAuthentication();
-app.UseAuthorization();
+//app.UseAuthentication();
+//app.UseAuthorization();
 
 app.UseSwagger();
 app.UseSwaggerUI(options => {
